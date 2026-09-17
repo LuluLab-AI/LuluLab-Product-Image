@@ -1,0 +1,4 @@
+interface:
+  display_name: "爆款图文"
+  short_description: "默认逐张生成 9 张独立图片，数量可修改为 1～10 张"
+  default_prompt: "Use $product-image-ad to create a TikTok carousel from my product images."
