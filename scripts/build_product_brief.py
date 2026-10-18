@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Delegate conservative product-card construction to recreate-video-agent."""
+"""Delegate conservative product-card construction to LuluLab-Recreate-Video."""
 
 from __future__ import annotations
 
@@ -10,11 +10,11 @@ from pathlib import Path
 
 
 def main() -> int:
-    sibling = Path(__file__).resolve().parents[2] / "recreate-video-agent" / "scripts" / "build_product_brief.py"
+    sibling = Path(__file__).resolve().parents[2] / "LuluLab-Recreate-Video" / "scripts" / "build_product_brief.py"
     override = os.environ.get("PRODUCT_BRIEF_SCRIPT", "").strip()
     target = Path(override).expanduser() if override else sibling
     if not target.is_file():
-        print("error: 未找到 recreate-video-agent 的 build_product_brief.py。", file=sys.stderr)
+        print("error: 未找到 LuluLab-Recreate-Video 的 build_product_brief.py。", file=sys.stderr)
         return 2
     return subprocess.run([sys.executable, str(target), *sys.argv[1:]], check=False).returncode
 

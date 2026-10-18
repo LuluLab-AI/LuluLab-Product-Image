@@ -1,4 +1,4 @@
 interface:
-  display_name: "爆款图文"
-  short_description: "默认逐张生成 9 张独立图片，数量可修改为 1～10 张"
-  default_prompt: "Use $product-image-ad to create a TikTok carousel from my product images."
+  display_name: "LuluLab-Product-Image"
+  short_description: 'Create TikTok/Douyin product carousels (1–10 images) / 制作 TikTok/抖音带货图文（1～10 张）'
+  default_prompt: "Use $LuluLab-Product-Image to create a TikTok or Douyin product carousel from my product photos. / 使用 $LuluLab-Product-Image 根据我的产品图片制作 TikTok 或抖音带货图文。"

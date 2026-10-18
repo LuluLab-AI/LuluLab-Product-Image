@@ -2,7 +2,7 @@
 
 ## 服务门禁与单次提交
 
-复用兄弟 Skill `recreate-video-agent` 的 `scripts/server_video_analysis.py`，只调用 `RecreateVideoPromptV3`。运行前完整读取该 Skill 的 `references/server_video_analysis.md`。必须先确认本地可读取 `LZSTUDIO_API_KEY`、`RECREATE_VIDEO_API_KEY` 或 `~/.recreate-video/config.json` 中的 `apiKey`；缺失时停止并提示用户配置，不能读取/上传视频。
+复用兄弟 Skill `LuluLab-Recreate-Video` 的 `scripts/server_video_analysis.py`，只调用 `RecreateVideoPromptV3`。运行前完整读取该 Skill 的 `references/server_video_analysis.md`。先完成本 Skill 的 LuluLab Key 预检，再通过已安装的最新版 `LuluLab-Recreate-Video` 提交 `RecreateVideoPromptV3`；该兄弟 Skill 使用随包 Node.js LuluLab CLI，视频上传和任务恢复遵循其现行文档。缺少 Key 时停止并提示用户配置，不能上传视频。
 
 保留同一 manifest 的排他锁、preparing_submission、taskId 原子 receipt 与 `--resume-task-id`。状态未知或没有 taskId 时停止核查，禁止猜测未提交并再次上传或提交。错误信息脱敏。
 

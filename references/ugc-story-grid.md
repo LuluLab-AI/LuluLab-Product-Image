@@ -10,7 +10,7 @@
 
 ## 必须执行的创意步骤
 
-先调用 `scripts/local_prompt.py` 构造母提示词，再由当前智能体设计 Blueprint v2.0。先提出三个不同故事前提，按首图停留理由、生活可信度、产品必要性、滑动动力选择一个，在 strategy 中记录候选与选择理由。
+先调用 `scripts/lululab_blueprint_generate.py`，由其用 `local_prompt.py` 构造母提示词，再通过 LuluLab `ChatGenV2` 生成 Blueprint v2.0 与逐张视觉 Prompt。先提出三个不同故事前提，按首图停留理由、生活可信度、产品必要性、滑动动力选择一个，在 strategy 中记录候选与选择理由。
 
 借鉴 UGC 视频的事件、动作、可见体验和情绪回报，转换为逐张滑动：触发事件→冲突或选择升级→产品介入→可见体验→情绪回报→自然 CTA。可按用户选择的图片数量合并或展开节拍，不能机械一阶段一张。首图立刻发生事情，中间每张新增信息，悬念必须兑现；单图在一个瞬间同时呈现处境与产品作用。
 
@@ -26,7 +26,7 @@
 
 推荐单张目标为 1080×1920 或更高的 9:16 尺寸。生成后读取实际像素，检查人物一致、Logo 和产品结构、画面完整、无乱码、无模型文字。只重做失败 Card 最多一次，不重交整套。
 
-底图齐全后，用 `render_text_overlay.py` 添加每张准确文案，再生成 `carousel_preview.png` 和带目标语言文案及中文翻译的 `publish_package.json`。
+每张底图通过 `scripts/lululab_image_generate.py` 独立生成。底图齐全后，用 `render_text_overlay.py` 添加每张准确文案，再生成 `carousel_preview.png` 和带目标语言文案及中文翻译的 `publish_package.json`。
 
 ## 历史网格兼容
 

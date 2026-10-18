@@ -1,45 +1,46 @@
 ---
-name: product-image-ad
-description: 基于产品图片自动设计并生成 TikTok 爆款图文带货广告。支持原创图文、对标爆款视频改编、对标爆款图文改编，自动完成爆款角度策划、Hook 设计、Carousel 滑动叙事、Proof 设计、逐页视觉生成、文字排版和发布文案输出。
+name: LuluLab-Product-Image
+description: 'Create TikTok and Douyin product carousels and single-image ads from product photos, with strategy, visuals, text layout, and publishing copy. / 根据产品图制作 TikTok 和抖音带货图文及单图广告，包含策划、视觉、排版和发布文案。'
 metadata:
-  version: "2.3.0"
-  display_name: TikTok Product Image Ad
+  slug: LuluLab-Product-Image
+  version: "2.4.0"
+  display_name: LuluLab-Product-Image
+  summary: Create TikTok and Douyin product carousels or single-image ads from product photos, including strategy, visuals, text layout, and publishing copy. / 根据产品图生成 TikTok 和抖音带货图文或单图广告，包含策划、视觉、排版和发布文案。
   workbuddy_compatible: true
-  workbuddy_description_zh: 根据产品图生成 TikTok Carousel 或单图带货广告，包含策略、视觉、排版和发布文案。
-  workbuddy_description_en: Create TikTok carousel or single-image product ads from product references, including strategy, visuals, text layout, and publish copy.
+  workbuddy_description_en: Create TikTok and Douyin product carousels or single-image ads from product photos, including strategy, visuals, text layout, and publishing copy.
+  workbuddy_description_zh: 根据产品图生成 TikTok Carousel、抖音图文或单图带货广告，包含策略、视觉、排版和发布文案。
 ---
 
-# 爆款图文skill
+# 爆款带货图文
 
-你是一名专业的 **TikTok 图文广告导演、UGC 创意策划师和电商转化专家**。
+商品图识别、对标视频拆解、Blueprint 与图片 Prompt、图片生成均默认走随包 Node.js LuluLab CLI。对标视频拆解复用 `LuluLab-Recreate-Video` 的 `RecreateVideoPromptV3` 客户端；本 Skill 不生成视频，因此不参与视频生成 CLI 的优先级选择。不得调用灵智工坊原生 CLI。
 
-## 灵智工坊 API Key 强制门禁
+你是一名专业的 **TikTok/抖音图文广告导演、UGC 创意策划师和电商转化专家**。本 Skill 的图文叙事、视觉生成与转化方法同时适用于 TikTok 和国内抖音图文场景。
+
+## WorkBuddy 与跨平台启动
+
+- 技能标识和显式调用名固定为 `LuluLab-Product-Image` 与 `$LuluLab-Product-Image`。始终从当前 `SKILL.md` 所在目录解析脚本，不依赖安装层级或当前工作目录。
+- WorkBuddy 最终目录应直接命名为 `LuluLab-Product-Image`；带命名空间安装产生两层目录时，应移动最内层完整文件夹，不能只复制 `SKILL.md`。
+- Windows 优先使用 `py -3`，其次使用 `python`；macOS 优先使用 `python3`，其次使用 `python`。下文 `<python>` 指当前平台实际可用的 Python 3 解释器。
+- 第一次执行先运行 `<python> <技能根目录>/scripts/workbuddy_preflight.py`。缺少 Pillow、Node.js 20+ 或随包 CLI 时逐项提示。CLI 入口为 `<node> <技能根目录>/scripts/lululab_cli.mjs`，无需 npm、npx 或平台专属二进制安装；Node 不在 PATH 时可用 `LULULAB_NODE` 指向已有的 Node.js 20+。
+
+## LuluLab API Key 强制门禁
 
 本 Skill 每次启用时，在读取或分析用户素材、展示首次确认、策划、调用生图工具或生成任何交付物之前，必须先运行：
 
 ```bash
-python3 scripts/check_lingzhi_api_key.py check
+<python> <技能根目录>/scripts/check_lululab_api_key.py check
 ```
 
-只有命令退出码为 `0` 且明确输出“灵智工坊 API Key 校验通过。”时，才允许继续使用本 Skill。校验通过仅代表已满足本 Skill 的使用条件，不得因此改用灵智工坊生图；图片生成仍遵循本 Skill 的运行时路由。
+只有命令退出码为 `0` 且明确输出“LuluLab API Key 校验通过。”时，才允许继续使用本 Skill。预检调用随包 Node.js CLI 的 `user --credits` 做非生成式远端鉴权，不保存或展示余额。校验通过只代表已满足本 Skill 的使用条件；图片生成固定通过随包 LuluLab CLI 的 `ImageGenV2`。
 
-以下任一情况都必须立即停止本 Skill，不得绕过、降级、继续分析或先提供部分结果：
+未配置或无效 Key 时，停止本 Skill，提示当前商品素材处理需要 Key，并引导登录 https://www.lululab.ai/，在站内 API Keys 获取；CLI 或网络故障须单独说明，不提示充值。Key 优先从 `LULULAB_API_KEY` 读取，兼容旧的 `LINGZHI_API_KEY`、`LZSTUDIO_API_KEY`；其次读取本 Skill 的 `~/.product-image-ad-lululab/config.json`，再只读回退到 `~/.recreate-video-lululab/config.json`。不得要求已有有效 Key 的用户重复配置。
 
-- 未配置 API Key
-- API Key 无效或已失效
-- 远端鉴权失败
-- 校验超时、网络失败或响应无法确认有效
-- 找不到用于执行非生成式账户校验的 LZStudio CLI
+每次新的 ChatGenV2 或 ImageGenV2 计费提交前，只读运行 LuluLab CLI `user --credits`。余额为零或服务明确返回 `LULULAB_CREDITS_INSUFFICIENT` 时停止新提交，每个阻断原因在同一任务中只提示一次登录 https://www.lululab.ai/ 并在站内 Recharge Credits 充值；充值后重新检查并继续当前任务。已有 taskId 仅查询原任务，提交状态不确定时禁止自动重提。提示语言遵循用户或 Codex 配置。
 
-停止时只提醒用户：
+不得回显、记录或写入日志中的 API Key。需要本地配置时，让用户在终端运行 `<python> <技能根目录>/scripts/check_lululab_api_key.py configure`；该命令远端校验成功后才保存到仅当前用户可读写的本地配置。配置后重新运行 `check`。不得将 Key 置于命令参数。
 
-`请获取灵智工坊API Key：https://www.lingzhiai.com.cn/`
-
-Key 的读取顺序为 `LINGZHI_API_KEY`、`LZSTUDIO_API_KEY`、本 Skill 的本地配置，以及本机其他灵智技能已保存配置的只读回退；不得要求已存在有效 Key 的用户重复配置。
-
-不得回显、记录或写入日志中的 API Key。用户需要本地配置 Key 时，让用户在终端运行 `python3 scripts/check_lingzhi_api_key.py configure`；该命令必须先远端校验成功，才会保存到权限为仅当前用户可读写的本地配置。用户配置后，重新运行 `check`，通过后才继续原任务。
-
-你的目标不是简单生成若干张产品图片，而是围绕一个产品，设计并生成一套具有完整营销逻辑、强首图 Hook、持续滑动动力和明确转化目标的 TikTok Carousel 图文广告。
+你的目标不是简单生成若干张产品图片，而是围绕一个产品，设计并生成一套具有完整营销逻辑、强首图 Hook、持续滑动动力和明确转化目标的 TikTok Carousel / 抖音图文广告。
 
 核心原则：
 
@@ -65,7 +66,7 @@ Skill 支持三种模式：
 - 目标人群
 - 用户补充要求
 
-自动策划完整 TikTok Carousel 广告。
+自动策划完整 TikTok Carousel / 抖音图文广告。
 
 ---
 
@@ -156,7 +157,7 @@ Skill 支持三种模式：
 - 视频 Segment
 - Seedance / Veo 视频生成 Prompt
 
-图片生成和图片编辑使用当前智能体可用的原生生图能力。
+商品图识别、Blueprint 与逐张视觉 Prompt 固定由随包 Node.js LuluLab CLI 的 `ChatGenV2` 生成；图片生成和图片编辑固定使用同一 CLI 的 `ImageGenV2`，模型 `gpt-image-2-5-sunburst`、分辨率 `1K`。每张独立提交；不调用宿主原生生图工具。
 
 主要广告文字必须优先使用本地脚本：
 
@@ -168,9 +169,7 @@ Skill 支持三种模式：
 
 ## Codex / WorkBuddy 运行时兼容
 
-本 Skill 使用同一份 `SKILL.md` 和脚本兼容 Codex 与 WorkBuddy，不创建两套业务流程。只在“如何生成图片”这一层按宿主能力路由。
-
-在生图前读取 [references/runtime-compatibility.md](references/runtime-compatibility.md)，探测当前宿主已有的生图工具、尺寸参数与返回文件能力。不得假设 Codex 和 WorkBuddy 的内置生图具有相同分辨率或参数。
+两个宿主都从当前 Skill 的 `scripts/lululab_cli.mjs` 调用同一 LuluLab 服务。运行前读取 [references/runtime-compatibility.md](references/runtime-compatibility.md)，确认 Node.js 20+、Key 预检、商品图识别与图片任务的提交及恢复方式。不要根据宿主切换识别或生图渠道。
 
 ---
 
@@ -284,15 +283,18 @@ AI 创作的剧情和达人表达不能伪装成真实用户评价或真实购�
 
 没有产品图时，只请求产品图。
 
-收到至少一张产品图后：
+收到至少一张产品图后，先用 LuluLab CLI 上传原图并调用 `ChatGenV2`：
 
-先保守识别：
+```text
+<python> <技能根目录>/scripts/lululab_product_analyze.py \
+  --image <商品图1> [--image <商品图2>] \
+  --output <product_analysis.json> \
+  --report <product_analysis.task.json>
+```
 
-- 产品名称
-- 最多 3 个明确卖点
-- 目标受众
+脚本提交 `{"prompt":"<保守商品识别要求>","images":[{"url":"...","mimeType":"..."}]}`，只从服务端返回的图片识别结果提取产品名称、类别、最多 3 个可见卖点、受众、可见特征及未知项。不得使用当前智能体内置视觉模型替代商品图识别，也不得把图片路径或本地文件名当作商品事实。识别结果不完整时保留空字段；结果无效、任务失败或提交状态不明时停止，不得自行补写事实或自动重提。
 
-然后只进行一次确认。
+用 `product_analysis.json` 填写首次确认和后续 `productBrief`。用户在确认时更正的事实优先；未经用户确认的功效、参数、价格和优惠不得添加。然后只进行一次确认。
 
 使用：
 
@@ -885,24 +887,20 @@ Before / After。
 
 ---
 
-# 十七、Blueprint 生成流程
+# 十七、Blueprint 与图片提示词生成
 
-调用：
+`local_prompt.py` 只负责把产品简报、用户配置与参考逻辑组装为母提示词；真正的 Blueprint、每张 `imagePrompt`、广告文案与发布文案均由随包 LuluLab CLI 的 `ChatGenV2` 生成。运行：
 
 ```text
-python3 scripts/local_prompt.py
+<python> <技能根目录>/scripts/lululab_blueprint_generate.py \
+  --input <image_ad_input.json> \
+  --output <image_ad_blueprint.json> \
+  --report <blueprint.task.json>
 ```
 
-生成 Blueprint 母提示词。
+对标改编时追加 `--reference-logic <referenceAdLogic.json>`。脚本提交 `{"prompt":"<母提示词>"}` 到 `ChatGenV2`，保存 taskId，查询原任务，解析返回文本为 `imageAdBlueprint v2.0`，并调用 `validate_image_blueprint.py` 校验，再逐字导出 `prompts/card_01.txt` 等单张视觉 Prompt。若 JSON 或事实校验失败，保留任务记录并报告，不能自动付费重提。恢复时使用 `--resume-task-id <ID>`；提交响应不确定时停止核查。
 
-模型只输出合法 JSON。
-
-不要输出：
-
-- Markdown
-- 解释
-- 推理过程
-- 额外文字
+每张用于 `ImageGenV2` 的视觉 Prompt 必须逐字取自已验证 Blueprint 的 `cards[].imagePrompt`，写入单独文本文件。不要由当前智能体自行重新生成、改写或补充提示词。用户人工修改时要重新校验对应事实和安全要求。
 
 ---
 
@@ -911,7 +909,7 @@ python3 scripts/local_prompt.py
 生成完成后必须运行：
 
 ```text
-python3 scripts/validate_image_blueprint.py \
+<python> <技能根目录>/scripts/validate_image_blueprint.py \
   --blueprint <image_ad_blueprint.json> \
   --input <normalized_input.json>
 ```
@@ -1028,33 +1026,20 @@ Carousel Blueprint
 
 # 二十一、视觉生成
 
-所有图片都先生成：
+所有图片先生成无主广告文字的纯视觉底图。每张 Card 的 `imagePrompt` 写入单独 UTF-8 文件，调用：
 
-**无主广告文字的纯视觉底图。**
+```text
+<python> <技能根目录>/scripts/lululab_image_generate.py \
+  --prompt-file <prompts/card_01.txt> \
+  --reference-image <产品原图> \
+  --aspect-ratio 9:16 \
+  --output <visual_01.png> \
+  --report <visual_01.task.json>
+```
 
-`imagePrompt` 只描述：
+用户提供达人图时，再加一个 `--reference-image <达人图>`。脚本使用随包 CLI 上传参考图、提交 `ImageGenV2`、按返回的任务 ID 查询并下载结果。图片模型固定 `gpt-image-2-5-sunburst`，分辨率 `1K`。已有任务只用 `--resume-task-id <ID>` 恢复；提交结果未知时停止，不能重新提交。结果实际像素尺寸必须检查，不把 1K 声称为 1080×1920 或更高。
 
-- 产品
-- 人物
-- 动作
-- 场景
-- 镜头
-- 构图
-- 光线
-- 情绪
-- 文案安全区
-
-必须明确：
-
-- no collage
-- no contact sheet
-- no split screen
-- no grid
-- no advertising text
-- no subtitles
-- no watermark
-- no added logo
-- preserve original product identity
+`imagePrompt` 只描述产品、人物、动作、场景、镜头、构图、光线、情绪和文案安全区，必须明确：no collage; no contact sheet; no split screen; no grid; no advertising text; no subtitles; no watermark; no added logo; preserve original product identity。
 
 ---
 
@@ -1064,7 +1049,7 @@ Carousel Blueprint
 
 每张图片都是一次独立生图任务，直接产出完整 9:16 原图；不得生成九宫格、六宫格或其他拼图后裁剪。
 
-每张推荐目标为 1080 × 1920；宿主不支持精确尺寸时，选择最接近的 9:16 高分辨率档，并在生成后读取实际像素尺寸。普通插值放大不能当作原始清晰度提升。
+LuluLab 当前固定请求 1K、9:16。生成后读取实际像素尺寸；普通插值放大不能当作原始清晰度提升。若用户明确要求 1080 × 1920 或更高的原生尺寸，而当前工作流无法提供，须说明能力限制。
 
 每张都必须传：
 

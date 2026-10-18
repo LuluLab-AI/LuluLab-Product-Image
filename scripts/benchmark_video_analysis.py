@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Delegate benchmark analysis to recreate-video-agent's safe V3 client."""
+"""Delegate benchmark analysis to LuluLab-Recreate-Video's safe V3 client."""
 
 from __future__ import annotations
 
@@ -10,11 +10,16 @@ from pathlib import Path
 
 
 def main() -> int:
-    sibling = Path(__file__).resolve().parents[2] / "recreate-video-agent" / "scripts" / "server_video_analysis.py"
+    skill_root = Path(__file__).resolve().parents[1]
+    candidates = [
+        skill_root.parent / "LuluLab-Recreate-Video" / "scripts" / "server_video_analysis.py",
+        skill_root.parent.parent / "LuluLab-Recreate-Video" / "scripts" / "server_video_analysis.py",
+    ]
+    sibling = next((path for path in candidates if path.is_file() and (path.parent / "lululab_cli.mjs").is_file()), candidates[0])
     override = os.environ.get("RECREATE_VIDEO_ANALYSIS_SCRIPT", "").strip()
     target = Path(override).expanduser() if override else sibling
     if not target.is_file():
-        print("error: 未找到 recreate-video-agent 的 server_video_analysis.py。", file=sys.stderr)
+        print("error: 未找到 LuluLab-Recreate-Video 的 server_video_analysis.py。", file=sys.stderr)
         return 2
     return subprocess.run([sys.executable, str(target), *sys.argv[1:]], check=False).returncode
 
