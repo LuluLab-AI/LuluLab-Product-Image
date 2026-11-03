@@ -1,18 +1,15 @@
 # LuluLab Product Image
 
-Create TikTok and Douyin product carousels or single-image ads from product photos. The skill plans the selling angle and slide sequence, generates visuals, renders accurate text overlays, and prepares publishing copy. It supports original ads and adaptations of reference videos or carousels.
+根据商品图制作 TikTok / 抖音带货图文或单图广告，与前端共用 `ProductImagePromptV1 → ImageGenV2`，通过 Customer API 报价、提交和查询 Dispatcher 任务。
 
-The bundled Node.js LuluLab CLI handles product analysis and carousel planning through `ChatGenV2`, and image generation through `ImageGenV2`. The skill does not generate video. Read [SKILL.md](SKILL.md) for the full workflow and product-identity rules.
+默认每套 6 张、9:16、1K、GPT Image 2.5 Sunburst；支持 1～10 张，1～8 张商品图及可选 1 张达人参考图。商品名称、卖点与受众可留空，创意要求交给共享策划工作流。每张图片使用策划返回的 prompt 独立生成。
 
-## Requirements
+需要 Node.js 20+，无需 npm 或 Python。配置 `LULULAB_API_KEY`（兼容已有凭证配置），不得把 Key 放入命令参数或日志。具体命令、提交前配置确认与恢复规则见 [SKILL.md](SKILL.md)，接口契约见 [FRONTEND_WORKFLOW.md](references/FRONTEND_WORKFLOW.md)。
 
-- Python 3, Pillow, and Node.js 20 or newer
-- A valid LuluLab API key (`LULULAB_API_KEY`; legacy `LINGZHI_API_KEY` and `LZSTUDIO_API_KEY` are also accepted)
+`plan` 离线校验；`estimate` 查询整套预估积分；配置确认后 `submit` 创建策划，`poll` 只读查询，策划成功后 `advance` 按序创建图片任务，完成后 `download` 下载。每次创建任务前均先取得 quoteId。中断后沿用原 state，不自动付费重试。
 
-Run `python3 scripts/workbuddy_preflight.py` to check the local environment. Run `python3 scripts/check_lululab_api_key.py check` before using the skill. On Windows, use `py -3` in place of `python3` if available. Do not put an API key in command arguments or commit it to this repository.
+当前共享流程只支持原创图文；旧 Python / ChatGenV2 / Blueprint 工具仅用于恢复历史任务，见 [LEGACY_WORKFLOW.md](references/LEGACY_WORKFLOW.md)。
 
-## 中文说明
+Create TikTok and Douyin product carousels through the same Customer/Dispatcher workflow as the frontend: `ProductImagePromptV1 → ImageGenV2`. Defaults: 6 cards, 9:16, 1K, GPT Image 2.5 Sunburst. Node.js 20+ only for new tasks. See [SKILL.md](SKILL.md) for configuration approval, estimates, submission, recovery, and delivery.
 
-根据产品图片制作 TikTok Carousel、抖音图文或单图带货广告。Skill 会策划卖点与逐页叙事、生成视觉图片、准确排版广告文字，并输出发布文案；支持原创以及参考视频或图文的改编。
-
-随包的 Node.js LuluLab CLI 使用 `ChatGenV2` 完成商品分析和图文策划，使用 `ImageGenV2` 生成图片。使用前需安装 Python 3、Pillow、Node.js 20+，并配置有效的 LuluLab API Key。完整流程及产品真实性规则见 [SKILL.md](SKILL.md)。
+Supports multilingual interaction for configuration, estimated credits, confirmation, progress, errors and delivery. Reply language follows the user’s choice; output text/speech language is configured separately. See [SKILL.md](SKILL.md).
