@@ -1,15 +1,15 @@
 ---
 name: LuluLab-Product-Image
 slug: lululab-product-image
-version: 3.1.3
-displayName: LuluLab-Product-Image
+version: 3.1.4
+displayName: LuluLab 带货图文
 summary: Create TikTok and Douyin product carousels and single-image ads from product photos.
 homepage: https://github.com/LuluLab-AI/LuluLab-Product-Image
 description: 'Create TikTok and Douyin product carousels and single-image ads from product photos, with strategy, visuals, text layout, and publishing copy. / 根据产品图制作 TikTok 和抖音带货图文及单图广告，包含策划、视觉、排版和发布文案。'
 metadata:
   slug: lululab-product-image
-  version: "3.1.3"
-  display_name: LuluLab-Product-Image
+  version: "3.1.4"
+  display_name: LuluLab 带货图文
   summary: Create TikTok and Douyin product carousels or single-image ads from product photos, including strategy, visuals, text layout, and publishing copy. / 根据产品图生成 TikTok 和抖音带货图文或单图广告，包含策划、视觉、排版和发布文案。
   workbuddy_compatible: true
   workbuddy_description_en: Create TikTok and Douyin product carousels or single-image ads from product photos, including strategy, visuals, text layout, and publishing copy.
