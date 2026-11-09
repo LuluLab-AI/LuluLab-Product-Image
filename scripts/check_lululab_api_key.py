@@ -14,7 +14,7 @@ import sys
 from pathlib import Path
 
 
-REMINDER = "当前商品图处理需要 LuluLab API Key。请登录 https://www.lululab.ai/，在站内 API Keys 获取，并在本机安全配置；不要在聊天中粘贴 Key。"
+REMINDER = "当前商品图处理需要 LuluLab API Key。请前往 https://www.lululab.ai/workshop/keys 获取，并在本机安全配置；不要在聊天中粘贴 Key。"
 DEFAULT_CONFIG_PATH = Path.home() / ".product-image-ad-lululab" / "config.json"
 CLI = Path(__file__).resolve().with_name("lululab_cli.mjs")
 

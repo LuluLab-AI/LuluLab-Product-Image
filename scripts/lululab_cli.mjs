@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /** LuluLab API v1 client. Node.js >=20; no external packages. */
 import { readFile } from 'node:fs/promises';
+import { quoteTaskBatch, validateBatchResponse } from './credit_batch.mjs';
 import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -41,6 +42,7 @@ export function imageMimeType(bytes) {
 export const HELP = `LuluLab Node.js CLI (Node >=20)
   node lululab_cli.mjs upload <file>
   node lululab_cli.mjs task submit --workflow-id <id> --input <JSON>
+  node lululab_cli.mjs task submit-batch --input <JSON-array>
   node lululab_cli.mjs task fetch --id <id>
   node lululab_cli.mjs user --credits
 Credentials: LULULAB_API_KEY (legacy LINGZHI_API_KEY / LZSTUDIO_API_KEY or
@@ -62,7 +64,7 @@ export async function resolveApiKey(env = process.env, home = homedir()) {
     }
     if (typeof config?.apiKey === 'string' && config.apiKey.trim()) return config.apiKey.trim();
   }
-  throw new LuluLabError('缺少 LuluLab API Key；请在本机配置 LULULAB_API_KEY。', 'LULULAB_KEY_MISSING');
+  throw new LuluLabError('缺少 LuluLab API Key；请前往 https://www.lululab.ai/workshop/keys 获取，并在本机安全配置 LULULAB_API_KEY。不要在聊天中粘贴 Key。', 'LULULAB_KEY_MISSING');
 }
 
 function webUrl(value, label) {
@@ -82,7 +84,7 @@ export class LuluLabClient {
     this.base = webUrl(baseUrl, 'API');
     if (this.base.search || this.base.hash || !['', '/'].includes(this.base.pathname))
       throw new LuluLabError('API 地址必须是服务根地址。');
-    if (!apiKey?.trim()) throw new LuluLabError('缺少 LuluLab API Key。', 'LULULAB_KEY_MISSING');
+    if (!apiKey?.trim()) throw new LuluLabError('缺少 LuluLab API Key；请前往 https://www.lululab.ai/workshop/keys 获取，并在本机安全配置 LULULAB_API_KEY。不要在聊天中粘贴 Key。', 'LULULAB_KEY_MISSING');
     this.key = apiKey.trim();
     this.fetch = fetchImpl;
     this.timeoutMs = timeoutMs;
@@ -98,19 +100,19 @@ export class LuluLabClient {
         redirect: 'error', signal: AbortSignal.timeout(this.timeoutMs),
       });
     } catch {
-      throw new LuluLabError(method === 'POST' && path === '/tasks'
+      throw new LuluLabError(method === 'POST' && ['/tasks', '/tasks/batch'].includes(path)
         ? 'LuluLab 提交响应未确认；任务可能已创建，禁止自动重提。'
-        : 'LuluLab API 网络错误或超时。', method === 'POST' && path === '/tasks'
+        : 'LuluLab API 网络错误或超时。', method === 'POST' && ['/tasks', '/tasks/batch'].includes(path)
           ? 'LULULAB_SUBMISSION_UNCERTAIN' : 'LULULAB_NETWORK_ERROR');
     }
     // Do not print server response text, which could contain private data.
     if (!response.ok) {
       let envelope = null;
       try { envelope = await response.json(); } catch { /* Never surface raw response. */ }
-      const code = remoteErrorCode(envelope) || ([401, 403].includes(response.status) ? 'LULULAB_KEY_INVALID' : 'LULULAB_HTTP_ERROR');
+      const code = (response.status === 402 ? 'LULULAB_CREDITS_INSUFFICIENT' : remoteErrorCode(envelope)) || ([401, 403].includes(response.status) ? 'LULULAB_KEY_INVALID' : 'LULULAB_HTTP_ERROR');
       throw new LuluLabError(code === 'LULULAB_CREDITS_INSUFFICIENT'
         ? 'LuluLab 积分不足。' : code === 'LULULAB_KEY_INVALID'
-          ? 'LuluLab API Key 无效或无权限。' : `LuluLab API HTTP ${response.status}。`, code);
+          ? 'LuluLab API Key 无效或无权限；请前往 https://www.lululab.ai/workshop/keys 检查或获取 Key，并在本机安全配置。' : `LuluLab API HTTP ${response.status}。`, code);
     }
     try {
       const value = await response.json();
@@ -120,7 +122,7 @@ export class LuluLabClient {
     catch (error) {
       if (error instanceof LuluLabError) throw error;
       throw new LuluLabError('LuluLab API 返回无效 JSON；提交任务时禁止自动重提。',
-        method === 'POST' && path === '/tasks' ? 'LULULAB_SUBMISSION_UNCERTAIN' : 'LULULAB_CLI_FAILED');
+        method === 'POST' && ['/tasks', '/tasks/batch'].includes(path) ? 'LULULAB_SUBMISSION_UNCERTAIN' : 'LULULAB_CLI_FAILED');
     }
   }
 
@@ -171,6 +173,20 @@ export class LuluLabClient {
     return result;
   }
 
+  async submitBatch(forms) {
+    try {
+      const quoted = await quoteTaskBatch(this, forms);
+      const tasks = await this.request('/tasks/batch', { method: 'POST', body: quoted });
+      return validateBatchResponse(tasks, forms.length);
+    } catch (error) {
+      if (error instanceof LuluLabError) throw error;
+      const wrapped = new LuluLabError(error.message, error.code);
+      wrapped.code = error.code || 'LULULAB_SUBMISSION_UNCERTAIN';
+      wrapped.status = error.status;
+      throw wrapped;
+    }
+  }
+
   async task(id) {
     if (typeof id !== 'string' || !id.trim()) throw new LuluLabError('任务 ID 不能为空。');
     return this.request(`/tasks/${encodeURIComponent(id.trim())}`);
@@ -215,6 +231,11 @@ export async function main(args = process.argv.slice(2)) {
   // Validate commands before reading credentials or accessing the network.
   let action;
   if (args[0] === 'upload' && args.length === 2) action = client => client.upload(args[1]);
+  else if (args[0] === 'task' && args[1] === 'submit-batch') {
+    if (args.length !== 4 || args[2] !== '--input') throw new LuluLabError('用法：task submit-batch --input <JSON数组>');
+    const forms = JSON.parse(args[3]);
+    action = client => client.submitBatch(forms);
+  }
   else if (args[0] === 'user' && args.length === 2 && args[1] === '--credits') action = client => client.credits();
   else if (args[0] === 'task' && args[1] === 'fetch') {
     const id = option('--id'); action = client => client.task(id);
@@ -234,7 +255,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   main().catch(error => {
     // Error messages are controlled by this module; filesystem errors can include paths.
     const diagnostic = error instanceof LuluLabError ? error.message : 'LuluLab Node.js invocation failed';
-    const errorCode = args => error instanceof LuluLabError && error.code !== 'LULULAB_CLI_FAILED' ? error.code : args[0] === 'task' && args[1] === 'submit'
+    const errorCode = args => error instanceof LuluLabError && error.code !== 'LULULAB_CLI_FAILED' ? error.code : args[0] === 'task' && ['submit', 'submit-batch'].includes(args[1])
       ? 'LULULAB_SUBMISSION_UNCERTAIN' : 'LULULAB_CLI_FAILED';
     process.stderr.write(JSON.stringify({ ok: false, errorCode: errorCode(process.argv.slice(2)), diagnostic }) + '\n');
     process.exitCode = 1;

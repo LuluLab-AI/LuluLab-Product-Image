@@ -36,7 +36,7 @@ metadata:
 
 只有命令退出码为 `0` 且明确输出“LuluLab API Key 校验通过。”时，才允许继续使用本 Skill。预检调用随包 Node.js CLI 的 `user --credits` 做非生成式远端鉴权，不保存或展示余额。校验通过只代表已满足本 Skill 的使用条件；图片生成固定通过随包 LuluLab CLI 的 `ImageGenV2`。
 
-未配置或无效 Key 时，停止本 Skill，提示当前商品素材处理需要 Key，并引导登录 https://www.lululab.ai/，在站内 API Keys 获取；CLI 或网络故障须单独说明，不提示充值。Key 优先从 `LULULAB_API_KEY` 读取，兼容旧的 `LINGZHI_API_KEY`、`LZSTUDIO_API_KEY`；其次读取本 Skill 的 `~/.product-image-ad-lululab/config.json`，再只读回退到 `~/.recreate-video-lululab/config.json`。不得要求已有有效 Key 的用户重复配置。
+未配置或无效 Key 时，停止本 Skill，提示当前商品素材处理需要 Key，并引导前往 https://www.lululab.ai/workshop/keys 获取；CLI 或网络故障须单独说明，不提示充值。Key 优先从 `LULULAB_API_KEY` 读取，兼容旧的 `LINGZHI_API_KEY`、`LZSTUDIO_API_KEY`；其次读取本 Skill 的 `~/.product-image-ad-lululab/config.json`，再只读回退到 `~/.recreate-video-lululab/config.json`。不得要求已有有效 Key 的用户重复配置。
 
 每次新的 ChatGenV2 或 ImageGenV2 计费提交前，只读运行 LuluLab CLI `user --credits`。余额为零或服务明确返回 `LULULAB_CREDITS_INSUFFICIENT` 时停止新提交，每个阻断原因在同一任务中只提示一次登录 https://www.lululab.ai/ 并在站内 Recharge Credits 充值；充值后重新检查并继续当前任务。已有 taskId 仅查询原任务，提交状态不确定时禁止自动重提。提示语言遵循用户或 Codex 配置。
 

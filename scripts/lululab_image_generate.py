@@ -26,7 +26,7 @@ FAILED = {'failed', 'failure', 'error', 'cancelled', 'canceled', 'timeout', 'tim
 class GenerationError(RuntimeError):
     pass
 
-KEY_MESSAGE = '当前步骤需要 LuluLab API Key。请登录 https://www.lululab.ai/，在站内 API Keys 获取，并按 Skill 的本地配置方式保存；不要在聊天中粘贴 Key。'
+KEY_MESSAGE = '当前步骤需要 LuluLab API Key。请前往 https://www.lululab.ai/workshop/keys 获取，并按 Skill 的本地配置方式保存；不要在聊天中粘贴 Key。'
 CREDITS_MESSAGE = 'LULULAB_CREDITS_INSUFFICIENT：积分不足，已停止新的计费提交。请登录 https://www.lululab.ai/，在站内 Recharge Credits 充值；完成后重新检查并继续当前任务。'
 
 class CreditsInsufficient(GenerationError):

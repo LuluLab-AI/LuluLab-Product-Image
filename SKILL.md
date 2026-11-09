@@ -1,9 +1,14 @@
 ---
 name: LuluLab-Product-Image
+slug: lululab-product-image
+version: 3.1.3
+displayName: LuluLab-Product-Image
+summary: Create TikTok and Douyin product carousels and single-image ads from product photos.
+homepage: https://github.com/LuluLab-AI/LuluLab-Product-Image
 description: 'Create TikTok and Douyin product carousels and single-image ads from product photos, with strategy, visuals, text layout, and publishing copy. / 根据产品图制作 TikTok 和抖音带货图文及单图广告，包含策划、视觉、排版和发布文案。'
 metadata:
-  slug: LuluLab-Product-Image
-  version: "3.1.2"
+  slug: lululab-product-image
+  version: "3.1.3"
   display_name: LuluLab-Product-Image
   summary: Create TikTok and Douyin product carousels or single-image ads from product photos, including strategy, visuals, text layout, and publishing copy. / 根据产品图生成 TikTok 和抖音带货图文或单图广告，包含策划、视觉、排版和发布文案。
   workbuddy_compatible: true
@@ -13,7 +18,7 @@ metadata:
 
 # LuluLab 带货图文
 
-所有新任务复用前端带货图文的工作流与提交协议：`ProductImagePromptV1 → ImageGenV2`，通过 Customer API 创建 Dispatcher 任务。客户端先创建一份策划，再按返回的 cards 顺序逐张提交图片，携带 parentTaskId、cardIndex 和 creationSource。当前服务端没有整套图文父任务；后续图片提交仍需运行 `advance`，并非关闭客户端后整套自动执行。
+所有新任务复用前端带货图文的工作流与提交协议：`ProductImagePromptV1 → ImageGenV2`，通过 Customer API 创建 Dispatcher 任务。客户端先创建一份策划，再将返回的全部 cards 通过 `/tasks/batch` 整批提交图片，携带 parentTaskId、cardIndex 和 creationSource。当前服务端没有整套图文父任务；后续图片提交仍需运行 `advance`，并非关闭客户端后整套自动执行。
 
 商品图 1～8 张，达人参考图可选 1 张。默认 6 张、9:16、1K、GPT Image 2.5 Sunburst。张数 1～10，1 张为单图；可选 Sunburst/Flare，1K/2K/4K，9:16、3:4、4:5、1:1、16:9。一次请求对应一套；多套使用不同 state 和独立创作需求，不能复制同一份策划凑数。
 
@@ -47,6 +52,8 @@ metadata:
 
 接口字段、配置快照和前端源码对应关系见 [references/FRONTEND_WORKFLOW.md](references/FRONTEND_WORKFLOW.md)；修改适配器时按该契约核对。
 
+同一次生成或批量重试必须先合计本次全部图片/视频费用并核对**可用积分（扣除已冻结额度）**，不足时整批停止。生成阶段使用 `/tasks/batch`，由服务端一次性冻结整批积分，禁止循环调用 `/tasks` 或积分不足后自动缩减数量。保留整批 quoteId 与全部任务 ID；网络响应未知时核对原状态，不自动重提。相关实现为 `scripts/credit_batch.mjs` 和 `scripts/dispatcher_commerce.mjs`。
+
 ## 多语言交互与成品语言
 
 - 三个概念独立处理：交互语言、目标市场、成品语言。交互语言依次采用用户明确指定的回复语言、宿主可用的语言设置、当前会话主要语言；无法判断时沿用上一轮，首次无上下文时使用用户本次消息的语言。支持按用户选择使用中文、英语、日语、韩语、西班牙语、葡萄牙语、法语、德语、越南语等语言，不限于中英文；不因本文或示例为中文就固定中文回复。
@@ -59,7 +66,7 @@ metadata:
 
 ## 调度器执行
 
-需要 Node.js ≥20。从当前 SKILL.md 所在目录解析脚本，支持 Windows/macOS/Linux，无需 npm。凭证继续使用本 skill 已有的环境变量与私有配置；不在命令参数、提示词或日志中放 Key。默认 Customer API 为 `https://customer.lululab.ai`，可用 `LULULAB_API_BASE_URL` 指定开发环境。
+需要 Node.js ≥20。从当前 SKILL.md 所在目录解析脚本，支持 Windows/macOS/Linux，无需 npm。凭证继续使用本 skill 已有的环境变量与私有配置；不在命令参数、提示词或日志中放 Key。未配置或无效 Key 时，用交互语言提示用户前往 https://www.lululab.ai/workshop/keys 获取 API Key，并在本机安全配置 `LULULAB_API_KEY`；不要让用户在聊天中粘贴 Key。已有有效 Key 时不重复提示。默认 Customer API 为 `https://customer.lululab.ai`，可用 `LULULAB_API_BASE_URL` 指定开发环境。
 
 收到产品图后识别可见商品事实；缺图时请求产品图。价格、优惠、功效、认证等只使用用户提供或素材有依据的信息。目标市场默认美国（请求值 United States）、发布语言默认 en-US；尊重用户设置。商品名称、卖点和受众均可留空，由共享工作流结合商品图策划，不为补齐字段编造事实。人物要求和附加创意完整保留在 creativeRequirement；素材提及须先替换为实际 URL，不把前端临时的 @ 标记直接提交。默认值只用于准备待确认配置。
 

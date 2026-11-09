@@ -5,6 +5,7 @@ import { resolve, dirname, basename } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 import { LuluLabClient, resolveApiKey, imageMimeType } from './lululab_cli.mjs';
+import { assertPlanBudget, quoteTaskBatch, validateBatchResponse } from './credit_batch.mjs';
 const SCHEMA = 'lululab.dispatcher.commerce.v1';
 const terminal = task => ['Succeeded', 'Failed', 'Cancelled'].includes(task?.status);
 const guid = value => typeof value === 'string' && /^[a-f\d]{8}(?:-[a-f\d]{4}){3}-[a-f\d]{12}$/i.test(value);
@@ -163,6 +164,7 @@ export async function submit(config, file, client) {
     let state = await load(file);
     if (state && (state.schema !== SCHEMA || state.signature !== signature)) throw Error('State belongs to another request or legacy task.');
     state ??= { schema: SCHEMA, signature, plan, planning: {}, generations: [] };
+    if (!state.planning.task?.id && !state.planning.submissionUnknown) await assertPlanBudget(client, estimateItems(plan));
     await createTask(state, state.planning, plan.task, file, client); return state;
   });
 }
@@ -176,9 +178,22 @@ export async function advance(file, client, approved = false) {
     }
     if (approved && state.planning.task?.status === 'Succeeded') {
       const requests = generationTasks(state.plan, state.planning.task);
-      for (const [index, request] of requests.entries()) {
-        state.generations[index] ??= {};
-        await createTask(state, state.generations[index], request, file, client);
+      const missing = requests.map((request, index) => ({ request, index })).filter(({ index }) => !state.generations[index]?.task?.id);
+      if (missing.length) {
+        for (const { request } of missing) {
+          for (const media of [...(request.input.referenceImages ?? []), ...(request.input.referenceAudios ?? [])]) {
+            const expiry = media.expiredAt || media.expiresAt;
+            if (expiry && (!Number.isFinite(Date.parse(expiry)) || Date.parse(expiry) <= Date.now())) throw Error('Reference expired; no new task was submitted.');
+          }
+        }
+        const quoted = await quoteTaskBatch(client, missing.map(item => item.request));
+        missing.forEach(({ request, index }, offset) => {
+          state.generations[index] = { request, quoteId: quoted[offset].quoteId, submissionUnknown: true };
+        });
+        await save(file, state); // Checkpoint all members before the one paid POST.
+        const tasks = validateBatchResponse(await client.request('/tasks/batch', { method: 'POST', body: quoted }), missing.length);
+        missing.forEach(({ index }, offset) => { state.generations[index].task = tasks[offset]; state.generations[index].submissionUnknown = false; });
+        await save(file, state);
       }
     }
     return state;

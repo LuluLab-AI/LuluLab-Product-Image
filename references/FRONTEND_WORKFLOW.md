@@ -33,6 +33,6 @@
 
 顶层 attributes 为 saveGeneratedAssets=true、creationSource=shoppable-images、parentTaskId=策划任务 ID、cardIndex=0 起始索引。图片 editorSnapshot 保存这些来源设置与图片 input 对应的生成配置。
 
-整套估算为 `/billing/estimates` 的 items：1 个 `{workflowId:'ProductImagePromptV1'}` 和 1 个 `{workflowId:'ImageGenV2',input:{model,resolution,imageCount}}`。每次实际创建任务前仍须 `/billing/quotes`，然后将 quoteId 随同请求提交 `/tasks`。
+整套估算为 `/billing/estimates` 的 items：1 个 `{workflowId:'ProductImagePromptV1'}` 和 1 个 `{workflowId:'ImageGenV2',input:{model,resolution,imageCount}}`。策划前校验整套费用与可用积分。策划使用 `/billing/quotes` → `/tasks`；生成图片时每张取得报价，然后将全部请求及 quoteId 一次提交 `/tasks/batch`。服务端整批冻结，额度不足时全部不启动。
 
 当前没有整套图文的服务端父编排任务。策划成功后的图片创建由前端或 skill 客户端驱动，关闭客户端不会自动提交剩余图片。skill 通过持久化 state 与 advance 恢复，同一已确认配置只补提交没有任务 ID 的图片；失败或提交结果未知的任务不得自动重提。

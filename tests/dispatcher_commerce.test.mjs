@@ -58,11 +58,17 @@ test('quote then submit, read-only poll, and resume without duplicate paid tasks
   const client = {
     async request(path, options) {
       calls.push({ path, ...options });
-      if (path === '/billing/quotes') return { id: id(90) };
+      if (path === '/billing/estimates') return { credits: 6 };
+      if (path.startsWith('/credits?')) return { total: 1, items: [{ creditsAvailable: 100 }] };
+      if (path === '/billing/quotes') return { id: id(90 + calls.length), credits: 2 };
       const saved = JSON.parse(await readFile(file, 'utf8'));
-      const slot = sequence === 0 ? saved.planning : saved.generations[sequence - 1];
-      assert.equal(slot.submissionUnknown, true);
-      assert.equal(options.body.quoteId, id(90));
+      if (path === '/tasks/batch') {
+        assert.equal(options.body.length, 2);
+        assert.ok(saved.generations.every(slot => slot.submissionUnknown));
+        return options.body.map(() => ({ id: id(++sequence), status: 'Pending' }));
+      }
+      assert.equal(saved.planning.submissionUnknown, true);
+      assert.ok(options.body.quoteId);
       return { id: id(++sequence), status: 'Pending' };
     },
     async task(taskId) { return { id: taskId, status: taskId === id(3) ? 'Failed' : 'Succeeded', output: taskId === id(1) ? output(2) : { images: [product] } }; },
@@ -70,14 +76,14 @@ test('quote then submit, read-only poll, and resume without duplicate paid tasks
   try {
     await submit({ ...config, count: 2 }, file, client);
     await advance(file, client, false);
-    assert.equal(calls.length, 2);
+    assert.equal(calls.filter(call => call.path === '/tasks').length, 1);
     await advance(file, client, true);
-    assert.deepEqual(calls.map(call => call.path), Array(3).fill(['/billing/quotes', '/tasks']).flat());
+    assert.deepEqual(calls.filter(call => ['/tasks', '/tasks/batch'].includes(call.path)).map(call => call.path), ['/tasks', '/tasks/batch']);
     const state = await advance(file, client, true);
     assert.equal(state.generations[1].task.status, 'Failed');
-    assert.equal(calls.length, 6);
+    assert.equal(calls.filter(call => ['/tasks', '/tasks/batch'].includes(call.path)).length, 2);
     await submit({ ...config, count: 2 }, file, client);
-    assert.equal(calls.length, 6);
+    assert.equal(calls.filter(call => ['/tasks', '/tasks/batch'].includes(call.path)).length, 2);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
@@ -85,7 +91,7 @@ test('unknown submission remains saved and blocks a paid resubmission', async ()
   const dir = await mkdtemp(join(tmpdir(), 'lululab-image-unknown-'));
   const file = join(dir, 'state.json');
   let posts = 0;
-  const client = { async request(path) { if (path === '/billing/quotes') return { id: id(90) }; posts++; throw Error('Lost response'); } };
+  const client = { async request(path) { if (path === '/billing/estimates') return { credits: 6 }; if (path.startsWith('/credits?')) return { total: 1, items: [{ creditsAvailable: 100 }] }; if (path === '/billing/quotes') return { id: id(90) }; posts++; throw Error('Lost response'); } };
   try {
     await assert.rejects(submit(config, file, client), /Lost response/);
     await assert.rejects(submit(config, file, client), /may already exist/);
@@ -97,7 +103,7 @@ test('unknown submission remains saved and blocks a paid resubmission', async ()
 test('resume refuses expired references without new quotes and retains the planning ID', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'lululab-expired-')), file = join(dir, 'state.json');
   let requests = 0;
-  const client = { async request(path) { requests++; return { id: id(path === '/tasks' ? 1 : 90), status: 'Pending' }; },
+  const client = { async request(path) { if (path === '/billing/estimates') return { credits: 6 }; if (path.startsWith('/credits?')) return { total: 1, items: [{ creditsAvailable: 100 }] }; requests++; return { id: id(path === '/tasks' ? 1 : 90), status: 'Pending' }; },
     async task() { return { id: id(1), status: 'Succeeded', output: output(1) }; } };
   const originalNow = Date.now;
   try {
