@@ -1,14 +1,14 @@
 ---
 name: LuluLab-Product-Image
 slug: lululab-product-image
-version: 3.1.4
+version: 3.1.5
 displayName: LuluLab 带货图文
 summary: Create TikTok and Douyin product carousels and single-image ads from product photos.
 homepage: https://github.com/LuluLab-AI/LuluLab-Product-Image
 description: 'Create TikTok and Douyin product carousels and single-image ads from product photos, with strategy, visuals, text layout, and publishing copy. / 根据产品图制作 TikTok 和抖音带货图文及单图广告，包含策划、视觉、排版和发布文案。'
 metadata:
   slug: lululab-product-image
-  version: "3.1.4"
+  version: "3.1.5"
   display_name: LuluLab 带货图文
   summary: Create TikTok and Douyin product carousels or single-image ads from product photos, including strategy, visuals, text layout, and publishing copy. / 根据产品图生成 TikTok 和抖音带货图文或单图广告，包含策划、视觉、排版和发布文案。
   workbuddy_compatible: true
@@ -66,7 +66,7 @@ metadata:
 
 ## 调度器执行
 
-需要 Node.js ≥20。从当前 SKILL.md 所在目录解析脚本，支持 Windows/macOS/Linux，无需 npm。凭证继续使用本 skill 已有的环境变量与私有配置；不在命令参数、提示词或日志中放 Key。未配置或无效 Key 时，用交互语言提示用户前往 https://www.lululab.ai/workshop/keys 获取 API Key，并在本机安全配置 `LULULAB_API_KEY`；不要让用户在聊天中粘贴 Key。已有有效 Key 时不重复提示。默认 Customer API 为 `https://customer.lululab.ai`，可用 `LULULAB_API_BASE_URL` 指定开发环境。
+需要 Node.js ≥20。从当前 SKILL.md 所在目录解析脚本，支持 Windows/macOS/Linux，无需 npm。凭证继续使用本 skill 已有的环境变量与私有配置；不在命令参数、提示词或日志中放 Key。独立版执行需要调用 API 的步骤时，若 Key 缺失或无效，用交互语言引导用户登录 [LuluLab API Keys 页面](https://www.lululab.ai/workshop/keys) 获取 API Key，并在本机安全配置 `LULULAB_API_KEY`。用户询问如何获取 Key 时也提供此链接。不要让用户在聊天中粘贴 Key。已有有效 Key 时无需主动提醒。默认 Customer API 为 `https://customer.lululab.ai`，可用 `LULULAB_API_BASE_URL` 指定开发环境。
 
 收到产品图后识别可见商品事实；缺图时请求产品图。价格、优惠、功效、认证等只使用用户提供或素材有依据的信息。目标市场默认美国（请求值 United States）、发布语言默认 en-US；尊重用户设置。商品名称、卖点和受众均可留空，由共享工作流结合商品图策划，不为补齐字段编造事实。人物要求和附加创意完整保留在 creativeRequirement；素材提及须先替换为实际 URL，不把前端临时的 @ 标记直接提交。默认值只用于准备待确认配置。
 
